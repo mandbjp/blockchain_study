@@ -290,6 +290,60 @@ def consensus():
     return jsonify(response), 200
 
 
+@app.route('/calc/<user>', methods=['GET'])
+def calc_amount(user):
+    if user is None:
+        return "Error: ", 400
+
+    chain = blockchain.chain
+    last_block = chain[0]
+    current_index = 1
+    transaction_count = 0
+    mined_count = 0
+    amount = 0
+
+    while current_index < len(chain):
+        block = chain[current_index]
+        print(f'{last_block}')
+        print(f'{block}')
+        print("\n-----------\n")
+        # block = {
+        #     'message': "New Block Forged",
+        #     'index': block['index'],
+        #     'transactions': block['transactions'],
+        #     'proof': block['proof'],
+        #     'previous_hash': block['previous_hash'],
+        # }
+        
+        for transaction in block['transactions']:
+            # transaction = {
+            #     "amount": 1,
+            #     "recipient": "5095dd1c00e34df0991165eeb4c4ed7c",
+            #     "sender": "0"
+            # }
+            if transaction['recipient'] == user:
+                # 受け取った
+                amount += transaction['amount']
+                mined_count += 1 if transaction['sender'] == '0' else 0
+                transaction_count += 1 if transaction['sender'] != '0' else 0
+
+            if transaction['sender'] == user:
+                # 送金した
+                amount -= transaction['amount']
+                transaction_count += 1
+
+        last_block = block
+        current_index += 1
+
+    response = {
+        'user': user,
+        'amount': amount,
+        'transaction_count': transaction_count,
+        'mined_count': mined_count
+    }
+    return jsonify(response), 201
+
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
 
